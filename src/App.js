@@ -56,6 +56,28 @@ function Create(props)
   </article>
 }
 
+function Update(props)
+{
+  // title 과 body 속성으로 상태값을 만들어 입력될 때마다 값이 설정되게 한다.
+  const [title, setTitle] = useState(props.title);
+  const [body, setBody] = useState(props.body);
+  return <article>
+    <h2>Update</h2>
+    <form onSubmit={event => {
+      event.preventDefault();
+      props.onUpdate(title, body);
+    }}>
+      <p><input type="text" name="title" placeholder="title" value={title} onChange={event => {
+        setTitle(event.target.value);
+      }} /></p>
+      <p><textarea name="body" placeholder="body" value={body} onChange={event => {
+        setBody(event.target.value);
+      }}></textarea></p>
+      <p><input type="submit" value="Update" /></p>
+    </form>
+  </article>
+}
+
 function App() {
   // 변하지 않는 변수는 const로 선언하여 코드를 튼튼하게 할 수 있다.
   const [mode, setMode] = useState('WELCOME');
@@ -68,10 +90,15 @@ function App() {
   ]);
 
   let content = null;
+  let contextControl = null; // 페이지 이동 링크
   if (mode === 'WELCOME') {
     content = <Article title="Welcome" body="Hello WEB!"></Article>;
+    contextControl = <li><a href="/create" onClick={event => {
+      event.preventDefault();
+      setMode('CREATE');
+    }}>Create</a></li>;
   } else if (mode === 'READ') {
-    let title, body;
+    let title, body = null;
     topics.map(x => {
       if (x.id === id) {
         title = x.title;
@@ -79,33 +106,54 @@ function App() {
       }
     });
     content = <Article title={title} body={body}></Article>;
+    contextControl = <li><a href={'/update/' + id} onClick={event => {
+      event.preventDefault();
+      setMode('UPDATE');
+    }}>Update</a></li>
   } else if (mode === 'CREATE') {
     content = <Create onCreate={(_title, _body) => {
       const newTopic = {id: nextId, title: _title, body: _body};
+      const newTopics = [...topics]; // topics 를 복제해 newTopics 를 만든다.
+      newTopics.push(newTopic); // 복제한 newTopics 에 newTopic 을 추가하고
+      setTopics(newTopics); // 새로운 newTopics 를 topics 의 상태로 변경한다.
+      setMode('READ'); // Create 후 상세 보기로 넘어가도록 mode 상태를 READ 값으로 변경한다.
+      setId(nextId); // id 는 nextId 로 변경 하고
+      setNextId(nextId + 1); // nextId 는 거기에 + 1
+    }}></Create>;
+  } else if (mode === 'UPDATE') {
+    let title, body = null;
+    topics.map(x => {
+      if (x.id === id) {
+        title = x.title;
+        body = x.body;
+      }
+    });
+    content = <Update title={title} body={body} onUpdate={(_title, _body) => {
+      const updatedTopic = {id: id, title: _title, body: _body};
       const newTopics = [...topics];
-      newTopics.push(newTopic);
+      newTopics .map((topic, index) => {
+        if (topic.id === id) {
+          newTopics[index] = updatedTopic;
+        }
+      });
       setTopics(newTopics);
       setMode('READ');
-      setId(nextId);
-      setNextId(nextId + 1);
-    }}></Create>;
+    }}></Update>;
   }
-
 
   return (
     <div>
-      <Header title="REACT" onChangeMode={(event) => {
-        setMode('WELCOM');
+      <Header title="REACT" onChangeMode={event => {
+        setMode('WELCOME');
       }}></Header>
       <Nav topics={topics} onChangeMode={(_id) => {
         setMode('READ');
         setId(_id);
       }}></Nav>
       {content}
-      <a href="/create" onClick={event => {
-        event.preventDefault();
-        setMode('CREATE');
-      }}>Create</a>
+      <ul>
+        {contextControl}
+      </ul>
     </div>
   );
 }
