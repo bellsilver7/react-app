@@ -106,10 +106,20 @@ function App() {
       }
     });
     content = <Article title={title} body={body}></Article>;
-    contextControl = <li><a href={'/update/' + id} onClick={event => {
-      event.preventDefault();
-      setMode('UPDATE');
-    }}>Update</a></li>
+    contextControl = <>
+        <li><a href={'/update/' + id} onClick={event => {
+          event.preventDefault();
+          setMode('UPDATE');
+        }}>Update</a></li>
+        <li><button type="button" onClick={event => {
+          const newTopics = [];
+          topics.map(topic => {
+            if (topic.id !== id) newTopics.push(topic);
+          });
+          setTopics(newTopics);
+          setMode('WELCOME');
+        }}>Delete</button></li>
+      </>;
   } else if (mode === 'CREATE') {
     content = <Create onCreate={(_title, _body) => {
       const newTopic = {id: nextId, title: _title, body: _body};
@@ -131,7 +141,7 @@ function App() {
     content = <Update title={title} body={body} onUpdate={(_title, _body) => {
       const updatedTopic = {id: id, title: _title, body: _body};
       const newTopics = [...topics];
-      newTopics .map((topic, index) => {
+      newTopics.map((topic, index) => {
         if (topic.id === id) {
           newTopics[index] = updatedTopic;
         }
